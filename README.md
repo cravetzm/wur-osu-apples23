@@ -11,5 +11,5 @@ It is important that the user has a source-based installation of the UR Drivers.
 
 The robot is currently exhibiting jerky movement, even when sent simple velocity commands at a high frequency. The behavior only occurs on the real hardware, not in simulation.
 
-The tangent selection process for the heuristic controller currently has a bug where it well select sequential tangents that have opposite directions. I have already written some alternative tangent selection logic, but it has not been tested in simulation yet.
+The tangent selection process for the heuristic controller currently has a bug where it will select sequential tangents that have opposite directions. I have already written some alternative tangent selection logic, but it has not been tested in simulation yet.
 
