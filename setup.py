@@ -25,6 +25,7 @@ setup(
                 'heuristic_controller = wur_osu_apples23.heuristic_controller:main',
                 'pose_listener = wur_osu_apples23.pose_listener:main',
                 'simulate_spring = wur_osu_apples23.simulate_spring:main',
+                'service_test = wur_osu_apples23.service_test:main',
         ],
     },
 )

@@ -9,7 +9,7 @@ class SquareMakingController(Node):
     def __init__(self):
         super().__init__('square_maker')
         self.get_clock().now()
-        self.publisher_ = self.create_publisher(TwistStamped, '/servo_node/delta_twist_cmds', 10)
+        self.publisher_ = self.create_publisher(TwistStamped, '/servo_node/delta_twist_cmds', 1)
         self.timer = self.create_timer(0.002, self.timer_callback)
         self.sequence = {"down":"right", "right":"up", "up":"left", "left":"down"}
         self.dir_def = {"down":[0.0,0.1], "right":[0.1,0.0], "up":[0.0,-0.1], "left":[-0.1, 0.0]}
@@ -32,7 +32,7 @@ class SquareMakingController(Node):
 
     def set_direction(self):
 
-        if self.loops == 1000:
+        if self.loops == 3000:
             self.loops = 0
             self.curr_dir = self.sequence[self.curr_dir]
             self.get_logger().info("Going {}!".format(self.curr_dir))
