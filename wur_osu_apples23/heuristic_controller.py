@@ -131,15 +131,15 @@ class PickController(Node):
         
     def set_initial_tangent(self, force):
 
-        highest_mag = np.argmax(np.abs(v[0:2]))
-        signs = np.sign(v[0:2])
+        highest_mag = np.argmax(np.abs(force[0:2]))
+        signs = np.sign(force[0:2])
 
         if highest_mag == 0:
             pre_cross = np.multiply(signs[0], [0.0, 1.0, 0.0])
         else: 
             pre_cross = np.multiply(-1.0 * signs[1], [1.0, 0.0, 0.0])
             
-        t = np.cross(pre_cross, v)
+        t = np.cross(pre_cross, force)
 
         self.last_t = t/np.linalg.norm(t)
     
