@@ -56,10 +56,18 @@ Next, we must activate the servo node. In the same terminal, call the activation
 
 ### Step 3: Run Control & Data Logging Script
 
-We are now ready to begin our picking experiments. Navigate to the folder where you want the experiment data to be stored. Then, source the setup file for the workspace in which you have this package. Finally, run:
+First, launch the service client and custom controller node by running:
 
 ```
 ros2 launch wur_osu_apples23 launch_picking_trials.py
+```
+
+Unfortunately, running nodes from launch files prevents them from recieving user input from the terminal. We will have to open one more terminal. 
+
+We are now ready to begin our picking experiments. Navigate to the folder where you want the experiment data to be stored. Then, source the setup file for the workspace in which you have this package. Finally, run:
+
+```
+ros2 run wur_osu_apples23 run_trials
 ```
 
 Follow the prompts to perform the picking trials.

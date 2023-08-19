@@ -1,8 +1,6 @@
 import subprocess
 import time
 
-
-
 def main():
 
     p = subprocess.Popen(["ros2", "bag", "record", "-a"])
