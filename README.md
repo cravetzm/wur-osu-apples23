@@ -5,6 +5,9 @@
 ### ROS2, Moveit2 and UR Drivers
 All development for this project was done in ROS2 Rolling. Other ROS2 distributions may work, but compatability is not guaranteed.
 
+### Apple Messages
+Custom services that accompany this package can be found in the apple_msgs package. I will make this available soon and link to the repository here.
+
 
 ## Current Issues
 
