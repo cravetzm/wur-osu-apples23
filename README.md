@@ -16,6 +16,7 @@ Several functions need to be added to the main script, including:
 * Reading from the probe
 * Reading from the digital calipers
 * Logging initial IMU locations
+* Automatic stopping for large force changes (pick events)
 
 ## Usage
 
@@ -27,7 +28,9 @@ Bring up the robot by running
 ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur5e robot_ip:=YOUR_ROBOT_IP launch_rviz:=false initial_joint_controller:=forward_position_controller 
 ```
 
-For the OSU robots, the robot IP is 169.254.177.231 or 169.254.177.232. It is often helpful to run the robot in headless mode using headless_mode:=true.
+For the OSU robots, the robot IP is 169.254.177.231 or 169.254.177.232. 
+
+It is often helpful to run the robot in headless mode using headless_mode:=true. However, note that if you are doing so, you must re-connect to the teach pendant via ros service calls whenever you switch to local mode. It is highly recommended that you instead keep the robot set to "automatic" and simply press play after sending commands via teach pendant.
 
 In another terminal, start MoveIt2 by running
 
