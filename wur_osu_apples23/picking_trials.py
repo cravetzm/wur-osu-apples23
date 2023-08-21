@@ -25,7 +25,7 @@ class PickManager(Node):
         controller_topics = ['/servo_node/delta_twist_cmds']
         robot_topics = ['/force_torque_sensor_broadcaster/wrench']
 
-        #self.to_record.extend(imu_topics)
+        self.to_record.extend(imu_topics)
         self.to_record.extend(controller_topics)
         self.to_record.extend(robot_topics)
 

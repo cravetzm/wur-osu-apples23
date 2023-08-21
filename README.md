@@ -8,6 +8,9 @@ All development for this project was done in ROS2 Rolling. Other ROS2 distributi
 ### Apple Messages
 Custom services that accompany this package can be found in the apple_msgs package. I will make this available soon and link to the repository here.
 
+### Tree Sensorization
+
+To log data about branch dynamics, follow the steps in https://github.com/markfrosty/Tree-Sensorization/tree/main. Your host computer should be able to view the topics published in Docker, but you should confirm by running ``` ros2 topic list ``` in a native terminal. 
 
 ## Current Issues
 
@@ -15,8 +18,8 @@ Several functions need to be added to the main script, including:
 
 * Reading from the probe
 * Reading from the digital calipers
-* Logging initial IMU locations
 * Automatic stopping for large force changes (pick events)
+* Logging the pose of the end-effector/  configuration of te robot
 
 ## Usage
 
