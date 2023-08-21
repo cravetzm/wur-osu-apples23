@@ -9,7 +9,7 @@ class PickController(Node):
     
     def __init__(self):
         
-        super().__init__('pick_controller')
+        super().__init__('pull_twist_controller')
         
         self.max_velocity = 0.1 # * 0.6 m/s
         self.vel_cmd = Vector3() # * 0.6 m/s
