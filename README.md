@@ -19,7 +19,7 @@ Several functions need to be added to the main script, including:
 * Logging the initial orientation of the branch-mounted IMUs
 * Reading from the probe
 * Reading from the digital calipers
-* Automatic stopping for large force changes (pick events)
+* (Automatic?) stopping for large force changes (pick events)
 * Logging the pose of the end-effector/  configuration of the robot
 
 ## Usage

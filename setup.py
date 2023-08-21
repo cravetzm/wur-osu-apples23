@@ -31,6 +31,7 @@ setup(
                 'service_test = wur_osu_apples23.service_test:main',
                 'run_trials = wur_osu_apples23.picking_trials:main',
                 'measurement_listener = wur_osu_apples23.measurement_listener:main'
+                'pull_twist_controller = wur_osu_apples23.pull_twist_controller:main'
         ],
     },
 )
