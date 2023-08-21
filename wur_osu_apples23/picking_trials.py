@@ -158,20 +158,25 @@ class PickManager(Node):
         goals = [0.0, 1.0, 0.0, 5.0, 0.0, 10.0, 0.0, 15.0]
         times = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0]
 
+        selection = ''
+
         for i in range(len(goals)):
 
-            print("Setting goal to {} [N] for {} [s].".format(goals[i], times[i]/100))
+            if selection != 's':
 
-            self.configure_controller(goals[i], times[i], ee_weight)
-            self.start_controller()
-            time.sleep(times[i]/100) #There has to be a more elegant way to do this but I can't figure it out.
+                print("Setting goal to {} [N] for {} [s].".format(goals[i], times[i]/100))
+
+                self.configure_controller(goals[i], times[i], ee_weight)
+                self.start_controller()
+
+                selection = input("Press ENTER when controller finishes to continue sequence. Or, enter 's' to stop sequence.")
+            else:
+                pass
 
     def run_pull_twist(self):
 
         self.future = self.pull_twist_cli.call_async(self.pull_twist_req)
         rclpy.spin_until_future_complete(self, self.future)
-
-    
 
     ## Main Loop
 
