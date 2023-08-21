@@ -16,10 +16,11 @@ To log data about branch dynamics, follow the steps in https://github.com/markfr
 
 Several functions need to be added to the main script, including:
 
+* Logging the initial orientation of the branch-mounted IMUs
 * Reading from the probe
 * Reading from the digital calipers
 * Automatic stopping for large force changes (pick events)
-* Logging the pose of the end-effector/  configuration of te robot
+* Logging the pose of the end-effector/  configuration of the robot
 
 ## Usage
 
@@ -60,7 +61,11 @@ Next, we must activate the servo node. In the same terminal, call the activation
 
 ```
 
-### Step 3: Run Control & Data Logging Script
+### Step 3: Make sure tree sensorization modules are connected.
+
+Once again, the user is referred to https://github.com/markfrosty/Tree-Sensorization/tree/main
+
+### Step 4: Run Control & Data Logging Script
 
 First, launch the service client and custom controller node by running:
 
