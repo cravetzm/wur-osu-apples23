@@ -16,6 +16,8 @@ To log data about branch dynamics, follow the steps in https://github.com/markfr
 
 ## Current Issues
 
+Running rosbag record as a python subprocess was blocking user input to the script. I will be developing a new automatic recording method, but for now it is disabled. Please manually run rosbag record.
+
 Several functions need to be added to the main script, including:
 
 * Reading from the probe

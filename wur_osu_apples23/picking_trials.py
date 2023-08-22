@@ -258,16 +258,17 @@ class PickManager(Node):
 
             input("Please drive the robot to the apple and perform a grasp. Do not change end effector orientation. When finished, press ENTER.")
 
-            print("Thank you. Now beginning recording.")
+            #print("Thank you. Now beginning recording.")
 
-            cmd = ["ros2", "bag", "record", "-o", timestamp]
-            cmd.extend(self.to_record)
-            print(cmd)
-            p = subprocess.Popen(cmd)
+            #cmd = ["ros2", "bag", "record", "-o", timestamp]
+            #cmd.extend(self.to_record)
+            #p  = subprocess.Popen(cmd)
 
-            time.sleep(0.5)
+            time.sleep(1)
 
             controller = self.select_controller()
+
+
             print("Initiating controller.")
             
             if controller == 'a':
@@ -277,10 +278,10 @@ class PickManager(Node):
 
             print("Finished controller sequence. Shutting down rosbag recording.")
 
-            p.terminate()
-            time.sleep(0.5)
-            p.kill()
-            time.sleep(0.5)
+            #p.terminate()
+            #time.sleep(0.5)
+            #p.kill()
+            #time.sleep(0.5)
 
             dropped = input("Enter number of dropped fruits.")
 
