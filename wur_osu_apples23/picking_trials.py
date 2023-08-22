@@ -115,6 +115,11 @@ class PickManager(Node):
         self.future = self.start_controller_cli.call_async(self.start_controller_req)
         rclpy.spin_until_future_complete(self, self.future)
 
+    def stop_controller(self):
+
+        self.future = self.stop_controller_cli.call_async(self.stop_controller_req)
+        rclpy.spin_until_future_complete(self, self.future)
+
     def measure_force(self):
 
         self.future = self.get_force_cli.call_async(self.get_force_req)
@@ -201,13 +206,27 @@ class PickManager(Node):
                 self.start_controller()
 
                 selection = input("Press ENTER when controller finishes to continue sequence. Or, enter 's' to stop sequence.")
+                self.stop_controller()
+                time.sleep(0.1)
+
             else:
                 pass
 
     def run_pull_twist(self):
 
-        self.future = self.pull_twist_cli.call_async(self.pull_twist_req)
-        rclpy.spin_until_future_complete(self, self.future)
+        response_given = False
+        response = ''
+
+        while response != 'n':
+            self.future = self.pull_twist_cli.call_async(self.pull_twist_req)
+            rclpy.spin_until_future_complete(self, self.future)
+            time.sleep(2)
+
+            while not response_given:
+                response = input("Try again? Enter 'y' for yes or 'n' for no.")
+                if response == 'y' or response == 'n':
+                    response_given = True
+        
 
     ## Main Loop
 
