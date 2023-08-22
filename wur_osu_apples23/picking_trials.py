@@ -69,6 +69,20 @@ class PickManager(Node):
         self.wait_for_srv(self.pull_twist_cli)
         self.pull_twist_req = Empty.Request()
 
+        self.get_imu1_orientation_cli = self.create_client(Get3DVect, 'get_imu1_orientation')
+        self.wait_for_srv(self.get_imu1_orientation_cli)
+        self.get_imu1_orientation_req = Get3DVect.Request()
+
+        self.get_imu2_orientation_cli = self.create_client(Get3DVect, 'get_imu2_orientation')
+        self.wait_for_srv(self.get_imu2_orientation_cli)
+        self.get_imu2_orientation_req = Get3DVect.Request()
+
+        self.get_imu3_orientation_cli = self.create_client(Get3DVect, 'get_imu3_orientation')
+        self.wait_for_srv(self.get_imu3_orientation_cli)
+        self.get_imu3_orientation_req = Get3DVect.Request()
+
+        
+
         # Internal variables
         self.repeat = True
 
@@ -109,6 +123,25 @@ class PickManager(Node):
         force = [response.x, response.y, response.z]
         return force
 
+    def poll_imus(self):
+
+        self.future = self.get_imu1_orientation_cli.call_async(self.get_imu1_orientation_req)
+        rclpy.spin_until_future_complete(self, self.future)
+        response = self.future.result()
+        imu1 = [response.x, response.y, response.z]
+
+        self.future = self.get_imu2_orientation_cli.call_async(self.get_imu2_orientation_req)
+        rclpy.spin_until_future_complete(self, self.future)
+        response = self.future.result()
+        imu2 = [response.x, response.y, response.z]
+
+        self.future = self.get_imu3_orientation_cli.call_async(self.get_imu3_orientation_req)
+        rclpy.spin_until_future_complete(self, self.future)
+        response = self.future.result()
+        imu3 = [response.x, response.y, response.z]
+
+        return [imu1, imu2, imu3]
+
     def continue_or_quit(self):
 
         answer_given = False
@@ -137,9 +170,7 @@ class PickManager(Node):
 
     
     def write_csv(self, data, name):
-        header = ["imu 1 location", "imu 2 location", "imu 3 location", \
-        "abscission layer location", "branch p1 location", "branch p2 location", "branch p3 location", \
-        "branch d1", "branch d2", "branch d3", "dropped fruit"]
+        header = ["imu 1 location", "imu 2 location", "imu 3 location", "imu 1 orientation", "imu 2 orientation", "imu 3 orientation", "abscission layer location", "branch p1 location", "branch p2 location", "branch p3 location", "branch d1", "branch d2", "branch d3", "dropped fruit"]
         csv_name = name + "_metadata.csv"
 
         with open(csv_name, 'w') as f:
@@ -200,8 +231,8 @@ class PickManager(Node):
 
             time.sleep(10)
 
-            #todo: log IMU orientations (requires new services in listener)
-
+            imu_orientations = self.poll_imus()
+            
             input("Please position end effector for approach, then press ENTER.")
 
             ee_weight = self.measure_force()

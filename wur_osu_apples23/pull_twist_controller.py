@@ -5,7 +5,7 @@ from geometry_msgs.msg import Vector3, TwistStamped
 from std_srvs.srv import Empty
 
 
-class PickController(Node):
+class PTController(Node):
     
     def __init__(self):
         
@@ -69,7 +69,7 @@ def main():
 
     rclpy.init()
 
-    node = PickController()
+    node = PTController()
 
     rclpy.spin(node)
 
