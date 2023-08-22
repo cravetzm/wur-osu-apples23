@@ -6,7 +6,9 @@
 All development for this project was done in ROS2 Rolling. Other ROS2 distributions may work, but compatability is not guaranteed.
 
 ### Apple Messages
-Custom services that accompany this package can be found in the apple_msgs package. I will make this available soon and link to the repository here.
+Custom services that accompany this package can be found in the apple_msgs package: https://github.com/cravetzm/apple_msgs
+
+These services are required in order to run the code in this repository.
 
 ### Tree Sensorization
 
@@ -16,10 +18,8 @@ To log data about branch dynamics, follow the steps in https://github.com/markfr
 
 Several functions need to be added to the main script, including:
 
-* Logging the initial orientation of the branch-mounted IMUs
 * Reading from the probe
 * Reading from the digital calipers
-* (Automatic?) stopping for large force changes (pick events)
 * Logging the pose of the end-effector/  configuration of the robot
 
 ## Usage
