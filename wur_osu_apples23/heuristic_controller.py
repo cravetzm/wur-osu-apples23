@@ -108,7 +108,7 @@ class PickController(Node):
                 self.iter = 0
                 self.get_logger().info("finished")
 
-        self.publisher.publish(msg)
+            self.publisher.publish(msg)
 
     ## HELPERS
 

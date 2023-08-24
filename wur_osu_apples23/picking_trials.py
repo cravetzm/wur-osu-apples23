@@ -257,7 +257,7 @@ class PickManager(Node):
             ee_weight = self.measure_force()
 
             input("Please drive the robot to the apple and perform a grasp. Do not change end effector orientation. When finished, press ENTER.")
-
+            input("Press play on the teach pendant, then press ENTER.")
             #print("Thank you. Now beginning recording.")
 
             #cmd = ["ros2", "bag", "record", "-o", timestamp]

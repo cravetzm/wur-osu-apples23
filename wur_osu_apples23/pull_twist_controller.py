@@ -20,7 +20,7 @@ class PTController(Node):
         
         self.running = False
         self.iter = 0
-        self.max_iter = 2000
+        self.max_iter = 200
 
         self.start_service = self.create_service(Empty, 'pull_twist/start_controller', self.start)
         self.stop_service = self.create_service(Empty, 'pull_twist/stop_controller', self.stop)
@@ -54,16 +54,18 @@ class PTController(Node):
         msg.header.frame_id = "tool0"
 
         if self.running:
-            msg.twist.linear.z = -1*self.max_velocity
-            msg.tist.angular.z = 0.1
-            self.iter = self.iter + 1
-        
+
             if self.iter == self.max_iter:
                 self.running = False
                 self.iter = 0
                 self.get_logger().info("finished")
 
-        self.publisher.publish(msg)
+            else:
+                msg.twist.linear.z = -1*self.max_velocity
+                msg.twist.angular.z = 1.0
+                self.iter = self.iter + 1
+            
+            self.publisher.publish(msg)
 
 def main():
 
