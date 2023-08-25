@@ -17,5 +17,10 @@ def generate_launch_description():
             package='wur_osu_apples23',
             name='pull_twist_controller',
             executable='pull_twist_controller'
+        ),
+        Node(
+            package='wur_osu_apples23',
+            name='recorder',
+            executable='recorder'
         )
     ])

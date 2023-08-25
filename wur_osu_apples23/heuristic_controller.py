@@ -116,7 +116,6 @@ class PickController(Node):
 
         f = np.linalg.norm(force)
         e_f = f-self.goal
-        
         n_hat = force/ f
         
         t = self.choose_tangent(n_hat)

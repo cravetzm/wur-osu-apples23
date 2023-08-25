@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 
-from apple_msgs.srv import SetValue, Get3DVect
+from apple_msgs.srv import SetValue, Get3DVect, Recorder
 from std_srvs.srv import Empty
 
 import time
@@ -81,7 +81,13 @@ class PickManager(Node):
         self.wait_for_srv(self.get_imu3_orientation_cli)
         self.get_imu3_orientation_req = Get3DVect.Request()
 
-        
+        self.start_recording_cli = self.create_client(Recorder, 'start_recording')
+        self.wait_for_srv(self.start_recording_cli)
+        self.start_recording_req = Recorder.Request()
+
+        self.stop_recording_cli = self.create_client(Empty, 'stop_recording')
+        self.wait_for_srv(self.stop_recording_cli)
+        self.stop_recording_req = Empty.Request()        
 
         # Internal variables
         self.repeat = True
@@ -227,6 +233,18 @@ class PickManager(Node):
                 if response == 'y' or response == 'n':
                     response_given = True
         
+    def start_recording(self, name):
+
+        self.start_recording_req.topics = self.to_record
+        self.start_recording_req.bagname = name
+
+        self.future = self.start_recording_cli.call_async(self.start_recording_req)
+        rclpy.spin_until_future_complete(self, self.future)
+
+
+    def stop_recording(self):
+        self.future = self.stop_recording_cli.call_async(self.stop_recording_req)
+        rclpy.spin_until_future_complete(self, self.future)
 
     ## Main Loop
 
@@ -258,7 +276,9 @@ class PickManager(Node):
 
             input("Please drive the robot to the apple and perform a grasp. Do not change end effector orientation. When finished, press ENTER.")
             input("Press play on the teach pendant, then press ENTER.")
-            #print("Thank you. Now beginning recording.")
+            
+            print("Thank you. Now beginning recording.")
+            self.start_recording(timestamp)
 
             #cmd = ["ros2", "bag", "record", "-o", timestamp]
             #cmd.extend(self.to_record)
@@ -277,6 +297,8 @@ class PickManager(Node):
                 self.run_pull_twist()
 
             print("Finished controller sequence. Shutting down rosbag recording.")
+
+            self.stop_recording()
 
             #p.terminate()
             #time.sleep(0.5)
