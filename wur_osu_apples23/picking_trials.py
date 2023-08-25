@@ -23,7 +23,7 @@ class PickManager(Node):
         '/mag0', '/mag1', '/mag2', \
         '/orient0', '/orient1', '/orient2']
         controller_topics = ['/servo_node/delta_twist_cmds']
-        robot_topics = ['/force_torque_sensor_broadcaster/wrench']
+        robot_topics = ['/force_torque_sensor_broadcaster/wrench', '/tool_pose']
 
         self.to_record.extend(imu_topics)
         self.to_record.extend(controller_topics)
@@ -158,7 +158,7 @@ class PickManager(Node):
         answer_given = False
 
         while not answer_given:
-            answer = input("Perform another pick? Please enter 'y' for yes or 'n' for no")
+            answer = input("Perform another pick? Please enter 'y' for yes or 'n' for no: ")
             if answer == 'y':
                 answer_given = True
             elif answer == 'n':
@@ -172,7 +172,7 @@ class PickManager(Node):
         answer_given = False
 
         while not answer_given:
-            answer = input("Please select a controller. Enter 'a' for heuristic controller or 'b' for pull and twist.")
+            answer = input("Please select a controller. Enter 'a' for heuristic controller or 'b' for pull and twist: ")
             if answer == 'a' or answer == 'b':
                 answer_given = True
                 return answer
@@ -220,7 +220,7 @@ class PickManager(Node):
 
     def run_pull_twist(self):
 
-        response_given = False
+        
         response = ''
 
         while response != 'n':
@@ -228,8 +228,10 @@ class PickManager(Node):
             rclpy.spin_until_future_complete(self, self.future)
             time.sleep(2)
 
+            response_given = False
+
             while not response_given:
-                response = input("Try again? Enter 'y' for yes or 'n' for no.")
+                response = input("Try again? Enter 'y' for yes or 'n' for no: ")
                 if response == 'y' or response == 'n':
                     response_given = True
         

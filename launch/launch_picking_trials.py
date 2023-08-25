@@ -22,5 +22,10 @@ def generate_launch_description():
             package='wur_osu_apples23',
             name='recorder',
             executable='recorder'
+        ),
+        Node(
+            package='wur_osu_apples23',
+            name='pose_listener',
+            executable='pose_listener'
         )
     ])
