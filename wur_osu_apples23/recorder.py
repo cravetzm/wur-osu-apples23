@@ -35,6 +35,8 @@ class RecorderNode(Node):
         time.sleep(0.5)
         self.p.kill()
 
+        return response
+
 def main():
 
     rclpy.init()
