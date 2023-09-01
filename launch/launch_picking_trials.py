@@ -27,5 +27,10 @@ def generate_launch_description():
             package='wur_osu_apples23',
             name='pose_listener',
             executable='pose_listener'
+        ),
+        Node(
+            package='wur_osu_apples23',
+            name='force_filter',
+            executable='force_filter'
         )
     ])

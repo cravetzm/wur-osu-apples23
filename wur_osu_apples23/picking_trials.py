@@ -22,7 +22,7 @@ class PickManager(Node):
         '/accel0', '/accel1', '/accel2', \
         '/mag0', '/mag1', '/mag2', \
         '/orient0', '/orient1', '/orient2']
-        controller_topics = ['/servo_node/delta_twist_cmds']
+        controller_topics = ['/v_cmd_unfiltered', '/hc_force_goal', '/servo_node/delta_twist_cmds', '/filtered_wrench', '/hc_tangent']
         robot_topics = ['/force_torque_sensor_broadcaster/wrench', '/tool_pose']
 
         self.to_record.extend(imu_topics)
@@ -181,7 +181,7 @@ class PickManager(Node):
 
     
     def write_csv(self, data, name):
-        header = ["imu 1 location", "imu 2 location", "imu 3 location", "imu 1 orientation", "imu 2 orientation", "imu 3 orientation", "abscission layer location", "branch p1 location", "branch p2 location", "branch p3 location", "branch d1", "branch d2", "branch d3", "dropped fruit"]
+        header = ["imu 1 location", "imu 2 location", "imu 3 location", "imu 1 orientation", "imu 2 orientation", "imu 3 orientation", "abscission layer location", "branch p1 location", "branch p2 location", "branch p3 location", "branch d1", "branch d2", "branch d3", "dropped fruit" , "ee weight"]
         csv_name = name + "_metadata.csv"
 
         with open(csv_name, 'w') as f:
@@ -309,6 +309,8 @@ class PickManager(Node):
 
             dropped = input("Enter number of dropped fruits.")
 
+
+            csv_data.append(ee_weight)
             self.write_csv(csv_data, timestamp)
 
             self.continue_or_quit()

@@ -32,7 +32,8 @@ setup(
                 'measurement_listener = wur_osu_apples23.measurement_listener:main',
                 'pull_twist_controller = wur_osu_apples23.pull_twist_controller:main',
                 'input_tester = wur_osu_apples23.input_tester:main',
-                'recorder = wur_osu_apples23.recorder:main'
+                'recorder = wur_osu_apples23.recorder:main',
+                'force_filter = wur_osu_apples23.force_filter:main'
         ],
     },
 )
