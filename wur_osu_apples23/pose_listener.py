@@ -35,12 +35,12 @@ class TfListener(Node):
         except LookupException as e:
             self.get_logger().error('failed to get transform {} \n'.format(repr(e)))
 
-#        try:
-#            trans = self._tf_buffer.lookup_transform(self.source, self.target2, rclpy.time.Time())
-#            self.probe_publisher.publish(trans)
-#
-#        except LookupException as e:
-#            self.get_logger().error('failed to get transform {} \n'.format(repr(e)))
+        try:
+            trans = self._tf_buffer.lookup_transform(self.source, self.target2, rclpy.time.Time())
+            self.probe_publisher.publish(trans)
+
+        except LookupException as e:
+            self.get_logger().error('failed to get transform {} \n'.format(repr(e)))
 
 def main(argv=sys.argv):
     rclpy.init(args=argv)
