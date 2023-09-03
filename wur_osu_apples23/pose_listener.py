@@ -16,21 +16,31 @@ class TfListener(Node):
 
     def __init__(self):
         super().__init__('tf_listener')
-        self.target = "tool0"
+        self.target1 = "tool0"
+        self.target2 = "probe_point"
         self.source = "base_link"
-        self.get_logger().info("Transforming from {} to {}".format(self.source, self.target))
+        self.get_logger().info("Transforming from {} to {}".format(self.target1, self.source))
+        self.get_logger().info("Transforming from {} to {}".format(self.target2, self.source))
         self._tf_buffer = Buffer()
         self._tf_listener = TransformListener(self._tf_buffer, self)
-        self.publisher_ = self.create_publisher(TransformStamped, "/tool_pose",10)
-        self.timer = self.create_timer(0.1, self.timer_callback) #30 Hz = 0.333s
+        self.publisher = self.create_publisher(TransformStamped, "/tool_pose",10)
+        self.probe_publisher = self.create_publisher(TransformStamped, "/probe_pose", 10)
+        self.timer = self.create_timer(0.1, self.timer_callback)
 
     def timer_callback(self):
         try:
-            trans = self._tf_buffer.lookup_transform(self.source, self.target, rclpy.time.Time())
-            self.publisher_.publish(trans)
+            trans = self._tf_buffer.lookup_transform(self.source, self.target1, rclpy.time.Time())
+            self.publisher.publish(trans)
 
         except LookupException as e:
             self.get_logger().error('failed to get transform {} \n'.format(repr(e)))
+
+#        try:
+#            trans = self._tf_buffer.lookup_transform(self.source, self.target2, rclpy.time.Time())
+#            self.probe_publisher.publish(trans)
+#
+#        except LookupException as e:
+#            self.get_logger().error('failed to get transform {} \n'.format(repr(e)))
 
 def main(argv=sys.argv):
     rclpy.init(args=argv)

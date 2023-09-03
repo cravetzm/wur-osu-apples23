@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 
 from apple_msgs.srv import SetValue, Get3DVect, Recorder
-from std_srvs.srv import Empty
+from std_srvs.srv import Empty, Trigger
 
 import time
 import subprocess
@@ -88,6 +88,14 @@ class PickManager(Node):
         self.stop_recording_cli = self.create_client(Empty, 'stop_recording')
         self.wait_for_srv(self.stop_recording_cli)
         self.stop_recording_req = Empty.Request()        
+
+        self.probe_cli = self.create_client(Get3DVect, 'get_probe_position')
+        self.wait_for_srv(self.probe_cli)
+        self.probe_req = Get3DVect.Request()      
+
+        self.zero_ft_cli = self.create_client(Trigger, '/io_and_status_controller/zero_ftsensor')
+        self.wait_for_srv(self.zero_ft_cli)
+        self.zero_ft_req = Trigger.Request()  
 
         # Internal variables
         self.repeat = True
@@ -181,7 +189,7 @@ class PickManager(Node):
 
     
     def write_csv(self, data, name):
-        header = ["imu 1 location", "imu 2 location", "imu 3 location", "imu 1 orientation", "imu 2 orientation", "imu 3 orientation", "abscission layer location", "branch p1 location", "branch p2 location", "branch p3 location", "branch d1", "branch d2", "branch d3", "dropped fruit" , "ee weight"]
+        header = ["imu 1 location", "imu 2 location", "imu 3 location", "imu 1 orientation", "imu 2 orientation", "imu 3 orientation", "abscission layer location", "dropped fruit", "ee weight"]
         csv_name = name + "_metadata.csv"
 
         with open(csv_name, 'w') as f:
@@ -197,8 +205,8 @@ class PickManager(Node):
     
     def run_heuristic_controller(self, ee_weight):
 
-        goals = [0.0, 1.0, 0.0, 5.0, 0.0, 10.0, 0.0, 15.0]
-        times = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0]
+        goals = [0.0, 5.0, 0.0, 10.0, 0.0, 15.0]
+        times = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0]
 
         selection = ''
 
@@ -219,7 +227,6 @@ class PickManager(Node):
                 pass
 
     def run_pull_twist(self):
-
         
         response = ''
 
@@ -248,23 +255,47 @@ class PickManager(Node):
         self.future = self.stop_recording_cli.call_async(self.stop_recording_req)
         rclpy.spin_until_future_complete(self, self.future)
 
+    def probe_point(self):
+
+        self.future = self.probe_cli.call_async(self.probe_req)
+        rclpy.spin_until_future_complete(self, self.future)
+        response = self.future.result()
+        point = [response.x, response.y, response.z]
+        
+        return point
+
+    def zero_ft(self):
+
+        self.future = self.zero_ft_cli.call_async(self.zero_ft_req)
+        rclpy.spin_until_future_complete(self, self.future)
+
     ## Main Loop
 
     def loop(self):
 
         while self.repeat:
 
+            input("Press ENTER to begin pick")
+
             timestamp = datetime.now().strftime("%m-%d-%Y-%H-%M-%S")
 
             imu_orientations = []
+            imu_locations = []
             dropped = 0
+            abscission_layer = []
             csv_data = []
 
             print("Let's begin the logging process. We will measure some static or initial values.")
-            # todo: probe IMU locations
-            # todo: probe abscission layer
-            # todo: probe branch points
-            # todo: measure branch diameter
+            
+            for i in range(3):
+                input("Place probe at IMU {} location. Press ENTER to record point".format(i + 1))
+                imu_locations.append(self.probe_point())
+
+
+            input("Place probe at abscission layer location. Press ENTER to record point".format(i + 1))
+            abscission_layer = self.probe_point()
+            
+            input("Record the branch diameter now. Then, press ENTER to proceed.")
 
             print("Recording initial orientation of the IMU. Please do not perturb branch. This process takes 10 seconds.")
 
@@ -274,6 +305,8 @@ class PickManager(Node):
             
             input("Please position end effector for approach, then press ENTER.")
 
+#            self.zero_ft()
+#            time.sleep(1)
             ee_weight = self.measure_force()
 
             input("Please drive the robot to the apple and perform a grasp. Do not change end effector orientation. When finished, press ENTER.")
@@ -282,9 +315,6 @@ class PickManager(Node):
             print("Thank you. Now beginning recording.")
             self.start_recording(timestamp)
 
-            #cmd = ["ros2", "bag", "record", "-o", timestamp]
-            #cmd.extend(self.to_record)
-            #p  = subprocess.Popen(cmd)
 
             time.sleep(1)
 
@@ -302,15 +332,21 @@ class PickManager(Node):
 
             self.stop_recording()
 
-            #p.terminate()
-            #time.sleep(0.5)
-            #p.kill()
-            #time.sleep(0.5)
-
             dropped = input("Enter number of dropped fruits.")
+            if len(imu_locations) != 0:
+                csv_data.extend(imu_locations)
+            else:
+                csv_data.extend([[],[],[]])
 
+            if len(imu_orientations) != 0:
+                csv_data.extend(imu_orientations)
+            else:
+                csv_data.extend([[],[],[]])
 
+            csv_data.append(abscission_layer)
+            csv_data.append(dropped)
             csv_data.append(ee_weight)
+
             self.write_csv(csv_data, timestamp)
 
             self.continue_or_quit()

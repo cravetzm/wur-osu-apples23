@@ -17,7 +17,7 @@ class PickController(Node):
         self.max_velocity = 0.1 # * 0.6 m/s
         self.vel_cmd = Vector3() # * 0.6 m/s
 
-        self.subscription = self.create_subscription(WrenchStamped, '/filtered_wrench', self.proccess_force_meas, 10)
+        self.subscription = self.create_subscription(WrenchStamped, '/filtered_wrench', self.process_force_meas, 10)
         self.publisher = self.create_publisher(TwistStamped, '/servo_node/delta_twist_cmds', 10)
         self.goal_publisher = self.create_publisher(Float64, '/hc_force_goal', 10)
         self.tangent_publisher = self.create_publisher(Vector3, '/hc_tangent', 10)
@@ -84,7 +84,7 @@ class PickController(Node):
 
     ## SUBSCRIBERS & PUBLISHERS
 
-    def proccess_force_meas(self, msg):
+    def process_force_meas(self, msg):
         
         wrench = msg.wrench 
 
@@ -139,7 +139,7 @@ class PickController(Node):
         t = self.choose_tangent(n_hat)
         t_hat = t/np.linalg.norm(t)
         
-        new = self.max_velocity*(np.tanh(e_f) * n_hat )#+ (1-np.tanh(np.abs(e_f))) * t_hat)    
+        new = self.max_velocity*(np.tanh(e_f) * n_hat + (1-np.tanh(np.abs(e_f))) * t_hat)    
         
         self.vel_cmd.x = new[0]
         self.vel_cmd.y = new[1]
@@ -160,17 +160,10 @@ class PickController(Node):
 
         self.last_t = t/np.linalg.norm(t)
 
-        #self.get_logger().info("initial tangent set to {}".format(self.last_t))
-        if np.linalg.norm(self.last_t) < 0.5:
-            self.get_logger().info("Your unit vector is not unit")
-    
     def choose_tangent(self, force):
 
         new_tangent = np.cross(force, np.cross(self.last_t, force))
         self.last_t = new_tangent
-        #self.get_logger().info("updated tangent set to {}".format(self.last_t))
-        if np.linalg.norm(self.last_t) < 0.01:
-            self.get_logger().info("Teeny tiny cross product!")
 
         return new_tangent
 

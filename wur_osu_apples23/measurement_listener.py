@@ -3,7 +3,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 
 from apple_msgs.srv import Get3DVect
-from geometry_msgs.msg import WrenchStamped, Vector3
+from geometry_msgs.msg import WrenchStamped, Vector3, TransformStamped
 
 import numpy as np
 
@@ -16,11 +16,9 @@ class Listener(Node):
         self.current_force = np.array([0.0,0.0,0.0])
         self.force_listener = self.create_subscription(WrenchStamped, '/force_torque_sensor_broadcaster/wrench', self.log_force, 10)
 
-
         self.imu1 = np.array([0.0,0.0,0.0])
         self.imu2 = np.array([0.0,0.0,0.0])
         self.imu3 = np.array([0.0,0.0,0.0])
-
 
         self.imu1_service = self.create_service(Get3DVect, 'get_imu1_orientation', self.send_orientation_1)
         self.imu1_listener = self.create_subscription(Vector3, '/orient0', self.log_orientation_1, qos_profile = qos_profile_sensor_data)
@@ -31,6 +29,10 @@ class Listener(Node):
         self.imu3_service = self.create_service(Get3DVect, 'get_imu3_orientation', self.send_orientation_3)
         self.imu3_listener = self.create_subscription(Vector3, '/orient2', self.log_orientation_3, qos_profile = qos_profile_sensor_data)
 
+        self.probe_service = self.create_service(Get3DVect, 'get_probe_position', self.probe)
+        self.probe_listener = self.create_subscription(TransformStamped, '/probe_pose', self.log_pose, 10)
+
+        self.probe_position = np.array([0.0,0.0,0.0])
 
     def send_force(self, request, response):
         
@@ -64,6 +66,14 @@ class Listener(Node):
 
         return response
 
+    def probe(self,request, response):
+
+        response.x = self.probe_position[0]
+        response.y = self.probe_position[1]
+        response.z = self.probe_position[2]
+        
+        return response
+
     def log_force(self, msg):
 
         wrench = msg.wrench 
@@ -80,6 +90,11 @@ class Listener(Node):
     def log_orientation_3(self, msg):
         
         self.imu3 = np.array([msg.x, msg.y, msg.z])
+
+    def log_pose(self, msg):
+
+        position = msg.transform.translation
+        self.probe_position = np.array([position.x, position.y, position.z])
         
 
 def main():
