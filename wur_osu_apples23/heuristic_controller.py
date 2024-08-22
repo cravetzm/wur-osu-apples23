@@ -28,14 +28,14 @@ class PickController(Node):
 
         self.timer = self.create_timer(0.01, self.timer_callback)
         
-        self.ee_weight = 0.0
+        self.ee_weight = 0.0 # WUR to set (or can uncomment and use set_ee_weight)
         self.force_from_gravity = np.array([0.0, 0.0, 0.0])
         self.last_t = np.array([0.0,0.0,0.0])
 
         self.running = False
 
         self.goal_service = self.create_service(SetValue, 'set_goal', self.change_goal)
-        self.weight_service = self.create_service(SetValue, 'set_ee_weight', self.log_ee_weight) #N
+        #self.weight_service = self.create_service(SetValue, 'set_ee_weight', self.log_ee_weight) #N
         self.start_service = self.create_service(Empty, 'start_controller', self.start)
         self.stop_service = self.create_service(Empty, 'stop_controller', self.stop)
         
