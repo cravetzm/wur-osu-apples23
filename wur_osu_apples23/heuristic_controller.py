@@ -1,10 +1,11 @@
 import numpy as np
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Vector3, WrenchStamped, TwistStamped
+from geometry_msgs.msg import Vector3, WrenchStamped, TwistStamped, TransformStamped
 from std_msgs.msg import Float64
 from apple_msgs.srv import SetValue
 from std_srvs.srv import Empty
+from scipy.spatial.transform import Rotation
 
 
 class PickController(Node):
@@ -16,28 +17,28 @@ class PickController(Node):
         self.goal= 0.0 #N
         self.max_velocity = 0.1 # * 0.6 m/s
         self.vel_cmd = Vector3() # * 0.6 m/s
+        self.min_tension = 5.0
 
-        self.subscription = self.create_subscription(WrenchStamped, '/filtered_wrench', self.process_force_meas, 10)
-        self.publisher = self.create_publisher(TwistStamped, '/servo_node/delta_twist_cmds', 10)
+        self.wrench_subscription = self.create_subscription(WrenchStamped, '/filtered_wrench', self.process_force_meas, 10)
+        self.pose_subscription = self.create_subscription(TransformStamped,'/tool_pose', self.remove_gravity, 10)
+        
+        self.cmd_publisher = self.create_publisher(TwistStamped, '/servo_node/delta_twist_cmds', 10)
         self.goal_publisher = self.create_publisher(Float64, '/hc_force_goal', 10)
         self.tangent_publisher = self.create_publisher(Vector3, '/hc_tangent', 10)
 
         self.timer = self.create_timer(0.01, self.timer_callback)
         
-        self.ee_weight = np.array([0.0,0.0,0.0])
+        self.ee_weight = 0.0
+        self.force_from_gravity = np.array([0.0, 0.0, 0.0])
         self.last_t = np.array([0.0,0.0,0.0])
 
         self.running = False
-        self.iter = 0
-        self.max_iter = 1000
 
         self.goal_service = self.create_service(SetValue, 'set_goal', self.change_goal)
-        self.timer_service = self.create_service(SetValue, 'set_timer', self.set_timer)
-        self.x_service = self.create_service(SetValue, 'set_ee_x', self.log_ee_x)
-        self.y_service = self.create_service(SetValue, 'set_ee_y', self.log_ee_y)
-        self.z_service = self.create_service(SetValue, 'set_ee_z', self.log_ee_z)
+        self.weight_service = self.create_service(SetValue, 'set_ee_weight', self.log_ee_weight) #N
         self.start_service = self.create_service(Empty, 'start_controller', self.start)
         self.stop_service = self.create_service(Empty, 'stop_controller', self.stop)
+        
 
     ## SERVICES
 
@@ -47,30 +48,6 @@ class PickController(Node):
         response.success = True
         return response
 
-    def set_timer(self, request, response):
-
-        self.max_iter = int(request.val)
-        response.success = True
-        return response
-
-    def log_ee_x(self, request, response):
-
-         self.ee_weight[0] = request.val
-         response.success = True
-         return response
-
-    def log_ee_y(self, request, response):
-
-         self.ee_weight[1] = request.val
-         response.success = True
-         return response
-
-    def log_ee_z(self, request, response):
-
-         self.ee_weight[2] = request.val
-         response.success = True
-         return response
-
     def start(self, request, response):
 
         self.running = True
@@ -79,8 +56,15 @@ class PickController(Node):
     def stop(self, request, response):
 
         self.running = False
-        self.iter = 0
+        self.get_logger().info("finished")
         return response
+    
+    def log_ee_weight(self, request, response):
+
+         self.ee_weight = request.val
+         response.success = True
+         return response
+     
 
     ## SUBSCRIBERS & PUBLISHERS
 
@@ -88,7 +72,8 @@ class PickController(Node):
         
         wrench = msg.wrench 
 
-        current_force = np.array([wrench.force.x, wrench.force.y, wrench.force.z]) - self.ee_weight
+        current_force = np.array([wrench.force.x, wrench.force.y,
+                                  wrench.force.z]) - self.force_from_gravity #todo: check dimensions
         
         if self.running:
             self.update_velocity(current_force)
@@ -103,15 +88,9 @@ class PickController(Node):
         msg.header.frame_id = "tool0"
 
         if self.running:
-            msg.twist.linear = self.vel_cmd
-            self.iter = self.iter + 1
-        
-            if self.iter == self.max_iter:
-                self.running = False
-                self.iter = 0
-                self.get_logger().info("finished")
+            msg.twist.linear = self.vel_cmd        
 
-            self.publisher.publish(msg)
+            self.cmd_publisher.publish(msg)
 
             msg2 = Float64()
             msg2.data = self.goal
@@ -127,6 +106,7 @@ class PickController(Node):
 
     def update_velocity(self, force):
 
+        
         f = np.linalg.norm(force)
         e_f = f-self.goal
 
@@ -139,8 +119,12 @@ class PickController(Node):
         t = self.choose_tangent(n_hat)
         t_hat = t/np.linalg.norm(t)
         
-        new = self.max_velocity*(np.tanh(e_f) * n_hat + (1-np.tanh(np.abs(e_f))) * t_hat)    
-        
+        if f >= self.min_tension:
+            new = self.max_velocity*(np.tanh(e_f) * n_hat + 
+                                     (1-np.tanh(np.abs(e_f))) * t_hat)    
+        else:
+            new = [0,0,-1*self.max_velocity]
+                
         self.vel_cmd.x = new[0]
         self.vel_cmd.y = new[1]
         self.vel_cmd.z = new[2]
@@ -166,6 +150,20 @@ class PickController(Node):
         self.last_t = new_tangent
 
         return new_tangent
+    
+    def remove_gravity(self, pose_msg):
+        
+        quat_msg = pose_msg.transform.rotation
+        quat_vac = [quat_msg.x, quat_msg.y, quat_msg.z, quat_msg.w]
+        
+        r = Rotation.from_quat(quat_vac)
+        
+        #rotate force into ee frame
+        self.force_from_gravity = np.transpose(np.matmul(r.as_matrix(),np.transpose([0,0,-1*self.ee_weight])))
+
+        
+        #option later to use unrotated lever arm and rotated force to get torque
+        
 
 def main():
 
