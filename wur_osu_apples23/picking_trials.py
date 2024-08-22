@@ -40,22 +40,6 @@ class PickManager(Node):
         self.set_goal_cli = self.create_client(SetValue, 'set_goal')
         self.wait_for_srv(self.set_goal_cli)
         self.set_goal_req = SetValue.Request()
-        
-        self.set_timer_cli = self.create_client(SetValue, 'set_timer')
-        self.wait_for_srv(self.set_timer_cli)
-        self.set_timer_req = SetValue.Request()
-
-        self.set_ee_x_cli = self.create_client(SetValue, 'set_ee_x')
-        self.wait_for_srv(self.set_ee_x_cli)
-        self.set_ee_x_req = SetValue.Request()
-
-        self.set_ee_y_cli = self.create_client(SetValue, 'set_ee_y')
-        self.wait_for_srv(self.set_ee_y_cli)
-        self.set_ee_y_req = SetValue.Request()
-
-        self.set_ee_z_cli = self.create_client(SetValue, 'set_ee_z')
-        self.wait_for_srv(self.set_ee_z_cli)
-        self.set_ee_z_req = SetValue.Request()
 
         self.start_controller_cli = self.create_client(Empty, 'start_controller')
         self.wait_for_srv(self.set_ee_z_cli)
@@ -102,26 +86,10 @@ class PickManager(Node):
 
     ## Functions
 
-    def configure_controller(self, goal, timer, force):
+    def configure_controller(self, goal):
 
         self.set_goal_req.val = goal
         self.future = self.set_goal_cli.call_async(self.set_goal_req)
-        rclpy.spin_until_future_complete(self, self.future)
-
-        self.set_timer_req.val = timer
-        self.future = self.set_timer_cli.call_async(self.set_timer_req)
-        rclpy.spin_until_future_complete(self, self.future)
-
-        self.set_ee_x_req.val = force[0]
-        self.future = self.set_ee_x_cli.call_async(self.set_ee_x_req)
-        rclpy.spin_until_future_complete(self, self.future)
-
-        self.set_ee_y_req.val = force[1]
-        self.future = self.set_ee_y_cli.call_async(self.set_ee_y_req)
-        rclpy.spin_until_future_complete(self, self.future)
-
-        self.set_ee_z_req.val = force[2]
-        self.future = self.set_ee_z_cli.call_async(self.set_ee_z_req)
         rclpy.spin_until_future_complete(self, self.future)
 
     def start_controller(self):
@@ -203,44 +171,31 @@ class PickManager(Node):
             self.get_logger().info('service not available, waiting again...')
 
     
-    def run_heuristic_controller(self, ee_weight):
+    def run_heuristic_controller(self):
 
-        goals = [0.0, 5.0, 0.0, 10.0, 0.0, 15.0]
-        times = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0]
+        goal =  10.0 #WUR to set, must be more than pre-tension force
 
-        selection = ''
 
-        for i in range(len(goals)):
 
-            if selection != 's':
+        print("Setting goal to {} [N].".format(goal))
 
-                print("Setting goal to {} [N] for {} [s].".format(goals[i], times[i]/100))
+        self.configure_controller(goals[i])
+        self.start_controller()
 
-                self.configure_controller(goals[i], times[i], ee_weight)
-                self.start_controller()
-
-                selection = input("Press ENTER when controller finishes to continue sequence. Or, enter 's' to stop sequence.")
-                self.stop_controller()
-                time.sleep(0.1)
-
-            else:
-                pass
+        selection = input(Press ENTER to stop controller.")
+        self.stop_controller()
+        time.sleep(0.1)
 
     def run_pull_twist(self):
         
         response = ''
 
-        while response != 'n':
-            self.future = self.pull_twist_cli.call_async(self.pull_twist_req)
-            rclpy.spin_until_future_complete(self, self.future)
-            time.sleep(2)
+        self.future = self.pull_twist_cli.call_async(self.pull_twist_req)
+        rclpy.spin_until_future_complete(self, self.future)
 
-            response_given = False
-
-            while not response_given:
-                response = input("Try again? Enter 'y' for yes or 'n' for no: ")
-                if response == 'y' or response == 'n':
-                    response_given = True
+        selection = input(Press ENTER to stop controller.")
+        self.stop_controller()
+        time.sleep(0.1)
         
     def start_recording(self, name):
 
@@ -307,7 +262,6 @@ class PickManager(Node):
 
 #            self.zero_ft()
 #            time.sleep(1)
-            ee_weight = self.measure_force()
 
             input("Please drive the robot to the apple and perform a grasp. Do not change end effector orientation. When finished, press ENTER.")
             input("Press play on the teach pendant, then press ENTER.")
@@ -324,7 +278,7 @@ class PickManager(Node):
             print("Initiating controller.")
             
             if controller == 'a':
-                self.run_heuristic_controller(ee_weight)
+                self.run_heuristic_controller()
             elif controller == 'b':
                 self.run_pull_twist()
 
@@ -345,7 +299,6 @@ class PickManager(Node):
 
             csv_data.append(abscission_layer)
             csv_data.append(dropped)
-            csv_data.append(ee_weight)
 
             self.write_csv(csv_data, timestamp)
 
