@@ -1,4 +1,9 @@
-# Field Trial Code for 2023. WUR and OSU Collaboration.
+# Field Trial Code for 2023 & 2024. WUR and OSU Collaboration.
+
+## Important changes for 2024
+
+The controllers have been changed to operate continuously. They can be stopped using a service call. An example of this is in test_heuristics.py, where the controllers are stopped upon a keystroke. 
+A few hardware parameters need to be set in the code itself. The files that neeed to be updated are event_detector.py and heuristic_controller.py. The lines which need updating are indicated by comments that begin with "WUR". 
 
 ## Requirements
 
