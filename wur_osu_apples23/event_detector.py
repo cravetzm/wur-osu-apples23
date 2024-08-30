@@ -16,7 +16,7 @@ class EventDetector(Node):
         self.stop_controller_req = Empty.Request()
         
         self.subscriber = self.create_subscription(WrenchStamped, '/force_torque_sensor_broadcaster/wrench', self.wrench_callback, 10)
-        self.pressure_subscriber = self.create_subscription(UInt16, '/pressure', self.pressure_callback, 10)
+        self.pressure_subscriber = self.create_subscription(UInt16, '/pressure', self.pressure_callback, 10) #WUR to set topic
 
         self.force_memory = []
         self.pressure_memory = []
