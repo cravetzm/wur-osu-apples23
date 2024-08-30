@@ -28,28 +28,30 @@ class PickController(Node):
 
         self.timer = self.create_timer(0.01, self.timer_callback)
         
-        self.ee_weight = 0.0 # WUR to set (or can uncomment and use set_ee_weight)
+        self.ee_weight = 0.737 # WUR to set (or can uncomment and use set_ee_weight)
         self.force_from_gravity = np.array([0.0, 0.0, 0.0])
         self.last_t = np.array([0.0,0.0,0.0])
 
         self.running = False
 
         self.goal_service = self.create_service(SetValue, 'set_goal', self.change_goal)
-        #self.weight_service = self.create_service(SetValue, 'set_ee_weight', self.log_ee_weight) #N
         self.start_service = self.create_service(Empty, 'start_controller', self.start)
         self.stop_service = self.create_service(Empty, 'stop_controller', self.stop)
+        
+
         
 
     ## SERVICES
 
     def change_goal(self, request, response):
-        
+        self.get_logger().info("setting goal...")
         self.goal = request.val
         response.success = True
         return response
 
     def start(self, request, response):
 
+        self.get_logger().info("starting controller...")
         self.running = True
         return response
 
@@ -58,14 +60,7 @@ class PickController(Node):
         self.running = False
         self.get_logger().info("finished")
         return response
-    
-    def log_ee_weight(self, request, response):
-
-         self.ee_weight = request.val
-         response.success = True
-         return response
      
-
     ## SUBSCRIBERS & PUBLISHERS
 
     def process_force_meas(self, msg):
@@ -88,7 +83,9 @@ class PickController(Node):
         msg.header.frame_id = "tool0"
 
         if self.running:
+
             msg.twist.linear = self.vel_cmd        
+
 
             self.cmd_publisher.publish(msg)
 
@@ -106,7 +103,6 @@ class PickController(Node):
 
     def update_velocity(self, force):
 
-        
         f = np.linalg.norm(force)
         e_f = f-self.goal
 
@@ -123,7 +119,7 @@ class PickController(Node):
             new = self.max_velocity*(np.tanh(e_f) * n_hat + 
                                      (1-np.tanh(np.abs(e_f))) * t_hat)    
         else:
-            new = [0,0,-1*self.max_velocity]
+            new = [0.0,0.0,-1*self.max_velocity]
                 
         self.vel_cmd.x = new[0]
         self.vel_cmd.y = new[1]
@@ -152,7 +148,7 @@ class PickController(Node):
         return new_tangent
     
     def remove_gravity(self, pose_msg):
-        
+
         quat_msg = pose_msg.transform.rotation
         quat_vac = [quat_msg.x, quat_msg.y, quat_msg.z, quat_msg.w]
         

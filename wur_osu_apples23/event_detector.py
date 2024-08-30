@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_srvs.srv import Empty
+from std_msgs.msg import UInt16
 from geometry_msgs.msg import WrenchStamped
 import numpy as np
 
@@ -15,6 +16,7 @@ class EventDetector(Node):
         self.stop_controller_req = Empty.Request()
         
         self.subscriber = self.create_subscription(WrenchStamped, '/force_torque_sensor_broadcaster/wrench', self.wrench_callback, 10)
+        self.pressure_subscriber = self.create_subscription(UInt16, '/pressure', self.pressure_callback, 10)
 
         self.force_memory = []
         self.pressure_memory = []
@@ -127,3 +129,22 @@ class EventDetector(Node):
         elif self.flag and filtered_force[0] < 4.5:
             print("Apple was failed to be picked :( Force: {np.round(filtered_force[0])} Max Force: {np.max(force)}  Bdiff: {cropped_backward_diff}  Pressure: {avg_pressure}")
             self.stop_controller()
+
+    def wait_for_srv(self, srv):
+        while not srv.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+
+def main():
+
+    rclpy.init()
+
+    node = EventDetector()
+
+    rclpy.spin(node)
+
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+
+    main()
