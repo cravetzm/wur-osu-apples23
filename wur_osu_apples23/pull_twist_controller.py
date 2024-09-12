@@ -19,19 +19,11 @@ class PTController(Node):
         self.timer = self.create_timer(0.01, self.timer_callback)
         
         self.running = False
-        self.iter = 0
-        self.max_iter = 200
 
         self.start_service = self.create_service(Empty, 'pull_twist/start_controller', self.start)
         self.stop_service = self.create_service(Empty, 'pull_twist/stop_controller', self.stop)
 
     ## SERVICES
-
-    def set_timer(self, request, response):
-
-        self.max_iter = int(request.val)
-        response.success = True
-        return response
 
     def start(self, request, response):
 
@@ -55,15 +47,8 @@ class PTController(Node):
 
         if self.running:
 
-            if self.iter == self.max_iter:
-                self.running = False
-                self.iter = 0
-                self.get_logger().info("finished")
-
-            else:
-                msg.twist.linear.z = -1*self.max_velocity
-                msg.twist.angular.z = 1.0
-                self.iter = self.iter + 1
+            msg.twist.linear.z = -1*self.max_velocity
+            msg.twist.angular.z = 1.0
             
             self.publisher.publish(msg)
 
