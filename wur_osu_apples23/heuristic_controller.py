@@ -6,7 +6,8 @@ from std_msgs.msg import Float64
 from apple_msgs.srv import SetValue
 from std_srvs.srv import Empty
 from scipy.spatial.transform import Rotation
-
+from rcl_interfaces.msg import Parameter, ParameterValue
+from rcl_interfaces.srv import SetParameters, GetParameters, ListParameters
 
 class PickController(Node):
     
@@ -20,7 +21,7 @@ class PickController(Node):
         self.min_tension = 5.0
 
         self.wrench_subscription = self.create_subscription(WrenchStamped, '/filtered_wrench', self.process_force_meas, 10)
-        self.pose_subscription = self.create_subscription(TransformStamped,'/tool_pose', self.remove_gravity, 10)
+        self.pose_subscription = self.create_subscription(TransformStamped,'/tool_pose', self.configure_self, 10)
         
         self.cmd_publisher = self.create_publisher(TwistStamped, '/servo_node/delta_twist_cmds', 10)
         self.goal_publisher = self.create_publisher(Float64, '/hc_force_goal', 10)
@@ -30,6 +31,7 @@ class PickController(Node):
         
         self.ee_weight = 0.737 # WUR to set (or can uncomment and use set_ee_weight)
         self.force_from_gravity = np.array([0.0, 0.0, 0.0])
+        self.preferred_pull = np.array([0.0, 0.0, -1.0])
         self.last_t = np.array([0.0,0.0,0.0])
 
         self.running = False
@@ -38,8 +40,13 @@ class PickController(Node):
         self.start_service = self.create_service(Empty, 'start_controller', self.start)
         self.stop_service = self.create_service(Empty, 'stop_controller', self.stop)
         
+        self.R = np.identity(4)
 
-        
+        self.cli = self.create_client(SetParameters, '/servo_node/set_parameters')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = SetParameters.Request()        
+
 
     ## SERVICES
 
@@ -60,6 +67,11 @@ class PickController(Node):
         self.running = False
         self.get_logger().info("finished")
         return response
+
+    def configure_servo(self):
+        new_param_value = ParameterValue(type=ParameterType.PARAMETER_STRING, string_value="base_link")
+        self.req.parameters = [Parameter(name='moveit_servo.robot_link_command_frame', value=new_param_value)]
+        self.future = self.cli.call_async(self.req)
      
     ## SUBSCRIBERS & PUBLISHERS
 
@@ -68,12 +80,14 @@ class PickController(Node):
         wrench = msg.wrench 
 
         current_force = np.array([wrench.force.x, wrench.force.y,
-                                  wrench.force.z]) - self.force_from_gravity #todo: check dimensions
+                                  wrench.force.z]) - self.force_from_gravity
+
+        rotated_force = np.transpose(np.matmul(self.R, np.transpose([current_force)))
         
         if self.running:
-            self.update_velocity(current_force)
+            self.update_velocity(rotated_force)
         else:
-            self.set_initial_tangent(current_force)
+            self.set_initial_tangent(rotated_force)
 
 
     def timer_callback(self):
@@ -116,10 +130,10 @@ class PickController(Node):
         t_hat = t/np.linalg.norm(t)
         
         if f >= self.min_tension:
-            new = self.max_velocity*(np.tanh(e_f) * n_hat + 
-                                     (1-np.tanh(np.abs(e_f))) * t_hat)    
+            new_dir = np.tanh(e_f) * n_hat + (1-np.tanh(np.abs(e_f))) * t_hat
+            new = self.max_velocity * new_dir / np.linalg.norm(new_dir)
         else:
-            new = [0.0,0.0,-1*self.max_velocity]
+            new = self.max_velocity*self.preferred_pull 
                 
         self.vel_cmd.x = new[0]
         self.vel_cmd.y = new[1]
@@ -128,18 +142,9 @@ class PickController(Node):
         
     def set_initial_tangent(self, force):
 
-        highest_mag = np.argmax(np.abs(force[0:2]))
-        signs = np.sign(force[0:2])
-
-        if highest_mag == 0:
-            pre_cross = np.multiply(signs[0], [0.0, 1.0, 0.0])
-        else: 
-            pre_cross = np.multiply(-1.0 * signs[1], [1.0, 0.0, 0.0])
-            
-        t = np.cross(pre_cross, force)
-
-        self.last_t = t/np.linalg.norm(t)
-
+        new_tangent = np.cross(force, np.cross(self.preferred_pull, force))
+        self.last_t = new_tangent/np.linalg.norm(new_tangent)
+      
     def choose_tangent(self, force):
 
         new_tangent = np.cross(force, np.cross(self.last_t, force))
@@ -147,17 +152,21 @@ class PickController(Node):
 
         return new_tangent
     
-    def remove_gravity(self, pose_msg):
+    def configure_self(self, pose_msg):
 
         quat_msg = pose_msg.transform.rotation
-        quat_vac = [quat_msg.x, quat_msg.y, quat_msg.z, quat_msg.w]
+        quat_vec = [quat_msg.x, quat_msg.y, quat_msg.z, quat_msg.w]
         
-        r = Rotation.from_quat(quat_vac)
+        position_msg = pose_msg.transform.translation
+        position_vec = [position_msg.x, position_msg.y, position_msg.z]
+
+        r = Rotation.from_quat(quat_vec)
+        self.R = r.as_matrix()
         
         #rotate force into ee frame
-        self.force_from_gravity = np.transpose(np.matmul(r.as_matrix(),np.transpose([0,0,-1*self.ee_weight])))
+        self.force_from_gravity = np.transpose(np.matmul(self.R, np.transpose([0,0,-1*self.ee_weight])))
 
-        
+        self.preferred_pull = -1 * np.array(position_vec) / np.linalg.norm(position_vec)
         #option later to use unrotated lever arm and rotated force to get torque
         
 
@@ -166,6 +175,7 @@ def main():
     rclpy.init()
 
     node = PickController()
+    node.configure_servo()
 
     rclpy.spin(node)
 
