@@ -139,7 +139,7 @@ class PickController(Node):
             if not derivative_control:
                 u = e_f
             else:
-                new_dir = e_f + 0.5* (e_f - e_f_prev)
+                u = e_f + 0.5* (e_f - e_f_prev)
 
             new_dir = np.tanh(u) * n_hat + (1-np.tanh(np.abs(u))) * t_hat
             new = self.max_velocity * new_dir / np.linalg.norm(new_dir)
