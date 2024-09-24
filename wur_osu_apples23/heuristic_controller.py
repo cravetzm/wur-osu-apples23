@@ -6,7 +6,7 @@ from std_msgs.msg import Float64
 from apple_msgs.srv import SetValue
 from std_srvs.srv import Empty
 from scipy.spatial.transform import Rotation
-from rcl_interfaces.msg import Parameter, ParameterValue
+from rcl_interfaces.msg import Parameter, ParameterValue, ParameterType
 from rcl_interfaces.srv import SetParameters, GetParameters, ListParameters
 
 class PickController(Node):
@@ -14,6 +14,9 @@ class PickController(Node):
     def __init__(self):
         
         super().__init__('pick_controller')
+
+        #set this manually
+        derivative_control = False
         
         self.goal= 0.0 #N
         self.max_velocity = 0.1 # * 0.6 m/s
@@ -46,6 +49,8 @@ class PickController(Node):
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         self.req = SetParameters.Request()        
+
+        self.e_f_prev = 0
 
 
     ## SERVICES
@@ -82,7 +87,7 @@ class PickController(Node):
         current_force = np.array([wrench.force.x, wrench.force.y,
                                   wrench.force.z]) - self.force_from_gravity
 
-        rotated_force = np.transpose(np.matmul(self.R, np.transpose([current_force)))
+        rotated_force = np.transpose(np.matmul(self.R, np.transpose(current_force)))
         
         if self.running:
             self.update_velocity(rotated_force)
@@ -119,6 +124,7 @@ class PickController(Node):
 
         f = np.linalg.norm(force)
         e_f = f-self.goal
+        
 
         if (np.abs(e_f) <= 1): #np.abs(e_f) <= 0.02 * self.goal) or 
             e_f = 0.0
@@ -130,7 +136,12 @@ class PickController(Node):
         t_hat = t/np.linalg.norm(t)
         
         if f >= self.min_tension:
-            new_dir = np.tanh(e_f) * n_hat + (1-np.tanh(np.abs(e_f))) * t_hat
+            if not derivative_control:
+                u = e_f
+            else:
+                new_dir = e_f + 0.5* (e_f - e_f_prev)
+
+            new_dir = np.tanh(u) * n_hat + (1-np.tanh(np.abs(u))) * t_hat
             new = self.max_velocity * new_dir / np.linalg.norm(new_dir)
         else:
             new = self.max_velocity*self.preferred_pull 
@@ -138,6 +149,7 @@ class PickController(Node):
         self.vel_cmd.x = new[0]
         self.vel_cmd.y = new[1]
         self.vel_cmd.z = new[2]
+        self.e_f_prev = e_f
         
         
     def set_initial_tangent(self, force):
