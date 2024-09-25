@@ -64,9 +64,9 @@ class PTController(Node):
 
         if self.running:
 
-            msg.twist.linear.x = self.max_velocity * preferred_pull[0]
-            msg.twist.linear.y = self.max_velocity * preferred_pull[1]
-            msg.twist.linear.z = self.max_velocity * preferred_pull[2]
+            msg.twist.linear.x = self.max_velocity * self.preferred_pull[0]
+            msg.twist.linear.y = self.max_velocity * self.preferred_pull[1]
+            msg.twist.linear.z = self.max_velocity * self.preferred_pull[2]
             msg.twist.angular.z = 1.0
             
             self.publisher.publish(msg)

@@ -16,7 +16,7 @@ class PickController(Node):
         super().__init__('pick_controller')
 
         #set this manually
-        derivative_control = False
+        self.derivative_control = False
         
         self.goal= 0.0 #N
         self.max_velocity = 0.1 # * 0.6 m/s
@@ -136,7 +136,7 @@ class PickController(Node):
         t_hat = t/np.linalg.norm(t)
         
         if f >= self.min_tension:
-            if not derivative_control:
+            if not self.derivative_control:
                 u = e_f
             else:
                 u = e_f + 0.5* (e_f - e_f_prev)
